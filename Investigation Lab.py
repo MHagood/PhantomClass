@@ -187,8 +187,8 @@ def decision_3(action=None, success=None, container=None, results=None, handle=N
 def Promote_to_Case(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None):
     phantom.debug('Promote_to_Case() called')
     
-    # call playbook "local/Case Promotion Lab", returns the playbook_run_id
-    playbook_run_id = phantom.playbook("local/Case Promotion Lab", container=container)
+    # call playbook "PhantomClass/Case Promotion Lab", returns the playbook_run_id
+    playbook_run_id = phantom.playbook("PhantomClass/Case Promotion Lab", container=container)
 
     return
 
