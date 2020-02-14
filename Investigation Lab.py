@@ -36,7 +36,7 @@ def geolocate_ip_1(action=None, success=None, container=None, results=None, hand
                 'context': {'artifact_id': container_item[1]},
             })
 
-    phantom.act("geolocate ip", parameters=parameters, assets=['maxmind'], callback=Filter_Banned_Countries, name="geolocate_ip_1")
+    phantom.act("geolocate ip", parameters=parameters, assets=['maxmind'], callback=join_Filter_Banned_Countries, name="geolocate_ip_1")
 
     return
 
@@ -46,6 +46,7 @@ def positive_threshold_exceeded(action=None, success=None, container=None, resul
     # check for 'if' condition 1
     matched_artifacts_1, matched_results_1 = phantom.condition(
         container=container,
+        action_results=results,
         conditions=[
             ["file_reputation:action_result.summary.positives", ">", 10000],
         ])
@@ -77,7 +78,7 @@ def domain_reputation_1(action=None, success=None, container=None, results=None,
                 'context': {'artifact_id': container_item[1]},
             })
 
-    phantom.act("domain reputation", parameters=parameters, assets=['virustotal'], name="domain_reputation_1")
+    phantom.act("domain reputation", parameters=parameters, assets=['virustotal'], callback=join_Filter_Banned_Countries, name="domain_reputation_1")
 
     return
 
@@ -98,7 +99,7 @@ def file_reputation(action=None, success=None, container=None, results=None, han
                 'context': {'artifact_id': container_item[1]},
             })
 
-    phantom.act("file reputation", parameters=parameters, assets=['virustotal'], name="file_reputation")
+    phantom.act("file reputation", parameters=parameters, assets=['virustotal'], callback=join_Filter_Banned_Countries, name="file_reputation")
 
     return
 
@@ -139,6 +140,7 @@ def Filter_out_non_IPs(action=None, success=None, container=None, results=None, 
     # collect filtered artifact ids for 'if' condition 1
     matched_artifacts_1, matched_results_1 = phantom.condition(
         container=container,
+        action_results=results,
         conditions=[
             ["artifact:*.cef.destinationAddress", "!=", ""],
         ],
@@ -206,7 +208,7 @@ def join_set_status_6(action=None, success=None, container=None, results=None, h
     phantom.debug('join_set_status_6() called')
 
     # check if all connected incoming actions are done i.e. have succeeded or failed
-    if phantom.actions_done([ 'Notify_IT' ]):
+    if phantom.actions_done([ 'geolocate_ip_1', 'domain_reputation_1', 'file_reputation', 'Notify_IT' ]):
         
         # call connected block "set_status_6"
         set_status_6(container=container, handle=handle)
@@ -229,14 +231,25 @@ def Filter_Banned_Countries(action=None, success=None, container=None, results=N
         container=container,
         action_results=results,
         conditions=[
-            ["geolocate_ip_1:action_result.data.*.country_name", "in", ""],
+            ["geolocate_ip_1:action_result.data.*.country_name", "in", "custom_list:Banned Countries"],
         ],
         name="Filter_Banned_Countries:condition_1")
 
     # call connected blocks if filtered artifacts or results
     if matched_artifacts_1 or matched_results_1:
-        pass
+        positive_threshold_exceeded(action=action, success=success, container=container, results=results, handle=handle, filtered_artifacts=matched_artifacts_1, filtered_results=matched_results_1)
 
+    return
+
+def join_Filter_Banned_Countries(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None):
+    phantom.debug('join_Filter_Banned_Countries() called')
+
+    # check if all connected incoming actions are done i.e. have succeeded or failed
+    if phantom.actions_done([ 'geolocate_ip_1', 'domain_reputation_1', 'file_reputation' ]):
+        
+        # call connected block "Filter_Banned_Countries"
+        Filter_Banned_Countries(container=container, handle=handle)
+    
     return
 
 def on_finish(container, summary):
