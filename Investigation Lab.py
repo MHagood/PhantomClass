@@ -165,7 +165,7 @@ def decision_3(action=None, success=None, container=None, results=None, handle=N
 
     # call connected blocks if condition 1 matched
     if matched_artifacts_1 or matched_results_1:
-        Promote_to_Case(action=action, success=success, container=container, results=results, handle=handle)
+        Store_Country_Name(action=action, success=success, container=container, results=results, handle=handle)
         return
 
     # call connected blocks for 'else' condition 2
@@ -303,6 +303,31 @@ def decision_4(action=None, success=None, container=None, results=None, handle=N
     if matched_artifacts_1 or matched_results_1:
         add_hash_to_seen_list(action=action, success=success, container=container, results=results, handle=handle)
         return
+
+    return
+
+def Store_Country_Name(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None):
+    phantom.debug('Store_Country_Name() called')
+    filtered_results_data_1 = phantom.collect2(container=container, datapath=["filtered-data:Filter_Banned_Countries:condition_1:geolocate_ip_1:action_result.data.*.country_name"])
+    filtered_results_item_1_0 = [item[0] for item in filtered_results_data_1]
+
+    ################################################################################
+    ## Custom Code Start
+    ################################################################################
+
+    url = ''
+    for item in filtered_results_data_1:
+        if item[0]:
+            url = item[0]
+        
+    # store country name into object db
+    phantom.save_object(key="country_name_Email_Notify",
+    value={'value': "'" + url + "'"}, auto_delete=True, container_id=container['id'])
+
+    ################################################################################
+    ## Custom Code End
+    ################################################################################
+    Promote_to_Case(container=container)
 
     return
 
