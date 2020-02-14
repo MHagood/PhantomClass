@@ -99,7 +99,7 @@ Origin Country: {6}"""
 
     phantom.format(container=container, template=template, parameters=parameters, name="Format_Notification")
 
-    send_email_1(container=container)
+    Format_user_query(container=container)
 
     return
 
@@ -149,6 +149,31 @@ def Get_Country_Name(action=None, success=None, container=None, results=None, ha
 
     phantom.save_run_data(key='Get_Country_Name:countryName', value=json.dumps(Get_Country_Name__countryName))
     Format_Notification(container=container)
+
+    return
+
+def Format_user_query(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None):
+    phantom.debug('Format_user_query() called')
+    
+    template = """/ph_user/?_filter_username=%22{0}%22"""
+
+    # parameter list for template variable replacement
+    parameters = [
+        "container:owner",
+    ]
+
+    phantom.format(container=container, template=template, parameters=parameters, name="Format_user_query")
+
+    action_0(container=container)
+
+    return
+
+def action_0(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None):
+    phantom.debug('action_0() called')
+
+    parameters = []
+
+    phantom.act("<undefined>", parameters=parameters, name="action_0")
 
     return
 
