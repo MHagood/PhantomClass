@@ -99,7 +99,7 @@ def file_reputation(action=None, success=None, container=None, results=None, han
                 'context': {'artifact_id': container_item[1]},
             })
 
-    phantom.act("file reputation", parameters=parameters, assets=['virustotal'], callback=join_Filter_Banned_Countries, name="file_reputation")
+    phantom.act("file reputation", parameters=parameters, assets=['virustotal'], callback=decision_4, name="file_reputation")
 
     return
 
@@ -273,6 +273,36 @@ def country_source_not_threatening(action=None, success=None, container=None, re
     results_item_1_0 = [item[0] for item in results_data_1]
 
     phantom.pin(container=container, data=results_item_1_0, message="Determined origin country is not on high-risk list", pin_type="card", pin_style="", name="non high-risk country")
+
+    return
+
+def add_hash_to_seen_list(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None):
+    phantom.debug('add_hash_to_seen_list() called')
+
+    container_data = phantom.collect2(container=container, datapath=['artifact:*.cef.fileHash', 'artifact:*.id'])
+
+    container_item_0 = [item[0] for item in container_data]
+
+    phantom.add_list("Prior Hashes", container_item_0)
+    join_Filter_Banned_Countries(container=container)
+
+    return
+
+def decision_4(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None):
+    phantom.debug('decision_4() called')
+
+    # check for 'if' condition 1
+    matched_artifacts_1, matched_results_1 = phantom.condition(
+        container=container,
+        action_results=results,
+        conditions=[
+            ["file_reputation:action_result.parameter.hash", "not in", "custom_list:Prior Hashes"],
+        ])
+
+    # call connected blocks if condition 1 matched
+    if matched_artifacts_1 or matched_results_1:
+        add_hash_to_seen_list(action=action, success=success, container=container, results=results, handle=handle)
+        return
 
     return
 
