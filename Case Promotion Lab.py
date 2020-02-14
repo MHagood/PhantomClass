@@ -105,7 +105,10 @@ Origin Country: {6}"""
 
 def send_email_1(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None):
     phantom.debug('send_email_1() called')
-
+    
+    #phantom.debug('Action: {0} {1}'.format(action['name'], ('SUCCEEDED' if success else 'FAILED')))
+    
+    extract_email_address__container_email = json.loads(phantom.get_run_data(key='extract_email_address:container_email'))
     # collect data for 'send_email_1' call
     formatted_data_1 = phantom.get_format_data(name='Format_Notification')
 
@@ -116,14 +119,14 @@ def send_email_1(action=None, success=None, container=None, results=None, handle
         'body': formatted_data_1,
         'from': "edu-labserver@splunk.com",
         'attachments': "",
-        'to': "michael.hagood@huntington.com",
+        'to': extract_email_address__container_email,
         'cc': "",
         'bcc': "",
         'headers': "",
         'subject': "New Case Created",
     })
 
-    phantom.act("send email", parameters=parameters, assets=['smtp'], name="send_email_1")
+    phantom.act("send email", parameters=parameters, assets=['smtp'], name="send_email_1", parent_action=action)
 
     return
 
@@ -164,16 +167,48 @@ def Format_user_query(action=None, success=None, container=None, results=None, h
 
     phantom.format(container=container, template=template, parameters=parameters, name="Format_user_query")
 
-    action_0(container=container)
+    Query_user(container=container)
 
     return
 
-def action_0(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None):
-    phantom.debug('action_0() called')
+def Query_user(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None):
+    phantom.debug('Query_user() called')
+
+    # collect data for 'Query_user' call
+    formatted_data_1 = phantom.get_format_data(name='Format_user_query')
 
     parameters = []
+    
+    # build parameters list for 'Query_user' call
+    parameters.append({
+        'location': formatted_data_1,
+        'verify_certificate': False,
+        'headers': "",
+    })
 
-    phantom.act("<undefined>", parameters=parameters, name="action_0")
+    phantom.act("get data", parameters=parameters, assets=['local'], callback=extract_email_address, name="Query_user")
+
+    return
+
+def extract_email_address(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None):
+    phantom.debug('extract_email_address() called')
+    results_data_1 = phantom.collect2(container=container, datapath=['Query_user:action_result.data.*.response_body'], action_results=results)
+    results_item_1_0 = [item[0] for item in results_data_1]
+
+    extract_email_address__container_email = None
+
+    ################################################################################
+    ## Custom Code Start
+    ################################################################################
+
+    extract_email_address__container_email = results_data_1[0][0]['data'][0]['email']
+
+    ################################################################################
+    ## Custom Code End
+    ################################################################################
+
+    phantom.save_run_data(key='extract_email_address:container_email', value=json.dumps(extract_email_address__container_email))
+    send_email_1(container=container)
 
     return
 
