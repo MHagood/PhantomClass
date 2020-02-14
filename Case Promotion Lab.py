@@ -68,7 +68,7 @@ def Fixed_Address(action=None, success=None, container=None, results=None, handl
 
     # call connected blocks if filtered artifacts or results
     if matched_artifacts_1 or matched_results_1:
-        Format_Notification(action=action, success=success, container=container, results=results, handle=handle, filtered_artifacts=matched_artifacts_1, filtered_results=matched_results_1)
+        Get_Country_Name(action=action, success=success, container=container, results=results, handle=handle, filtered_artifacts=matched_artifacts_1, filtered_results=matched_results_1)
 
     return
 
@@ -83,7 +83,8 @@ Event Name: {1}
 Description: {2}
 Source URL: {3}
 Target Server IP: {4}
-Suspicious File Path: {5}"""
+Suspicious File Path: {5}
+Origin Country: {6}"""
 
     # parameter list for template variable replacement
     parameters = [
@@ -93,6 +94,7 @@ Suspicious File Path: {5}"""
         "filtered-data:Fixed_sourceDNS:condition_1:artifact:*.cef.sourceDnsDomain",
         "filtered-data:Fixed_Address:condition_1:artifact:*.cef.destinationAddress",
         "filtered-data:Fixed_File_Path:condition_1:artifact:*.cef.filePath",
+        "Get_Country_Name:custom_function:countryName",
     ]
 
     phantom.format(container=container, template=template, parameters=parameters, name="Format_Notification")
@@ -122,6 +124,31 @@ def send_email_1(action=None, success=None, container=None, results=None, handle
     })
 
     phantom.act("send email", parameters=parameters, assets=['smtp'], name="send_email_1")
+
+    return
+
+def Get_Country_Name(action=None, success=None, container=None, results=None, handle=None, filtered_artifacts=None, filtered_results=None):
+    phantom.debug('Get_Country_Name() called')
+    input_parameter_0 = ""
+
+    Get_Country_Name__countryName = None
+
+    ################################################################################
+    ## Custom Code Start
+    ################################################################################
+
+    data = phantom.get_object(key='country_name_Email_Notify', container_id=container['id'])
+    Get_Country_Name__countryName = data[0]['value']['value']
+
+    # clear object db
+    phantom.clear_object(key='country_name_Email_Notify',container_id=container['id'])
+
+    ################################################################################
+    ## Custom Code End
+    ################################################################################
+
+    phantom.save_run_data(key='Get_Country_Name:countryName', value=json.dumps(Get_Country_Name__countryName))
+    Format_Notification(container=container)
 
     return
 
